@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-// 🛠️ Definição do tipo do curso para evitar erro de tipagem
+// ✅ Definição do tipo do curso
 type Curso = {
   id: number;
   titulo: string;
@@ -15,68 +15,50 @@ export default function AdminDashboard() {
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
   const [fotoCapa, setFotoCapa] = useState("");
-  const [cursos, setCursos] = useState<Curso[]>([]);
-  const [loading, setLoading] = useState(true); // ✅ Estado para loading
-  const [error, setError] = useState<string | null>(null); // ✅ Estado para erros
+  const [cursos, setCursos] = useState<Curso[]>([]); // ✅ Agora o TS sabe que "cursos" é um array de Curso
 
-  // ✅ Buscar cursos do Supabase
-  useEffect(() => {
-    async function fetchCursos() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/courses");
-        if (!res.ok) throw new Error("Erro ao buscar cursos");
-        const data: Curso[] = await res.json();
-        setCursos(data);
-      } catch (error) {
-        setError("Erro ao carregar cursos. Tente novamente.");
-        console.error("Erro ao carregar cursos:", error);
-      } finally {
-        setLoading(false);
-      }
+  // ✅ Função para buscar cursos do Supabase (mover para fora do useEffect)
+  async function fetchCursos() {
+    try {
+      const res = await fetch("/api/courses");
+      const data: Curso[] = await res.json();
+      setCursos(data);
+    } catch (error) {
+      console.error("Erro ao buscar cursos:", error);
     }
+  }
+
+  // ✅ Executa a busca quando o componente for carregado
+  useEffect(() => {
     fetchCursos();
   }, []);
 
-  // ✅ Adicionar novo curso
+  // ✅ Função para adicionar curso ao Supabase
   async function handleAdicionarCurso(e: React.FormEvent) {
     e.preventDefault();
-    if (!titulo || !descricao || !preco || !fotoCapa) {
-      alert("Todos os campos são obrigatórios!");
-      return;
-    }
-
-    const curso = {
+    const curso: Curso = {
+      id: 0, // O Supabase cria automaticamente o ID
       titulo,
       descricao,
       preco: parseFloat(preco),
       foto_capa: fotoCapa,
     };
 
-    try {
-      const res = await fetch("/api/courses", {
-        method: "POST",
-        body: JSON.stringify(curso),
-        headers: { "Content-Type": "application/json" },
-      });
+    const res = await fetch("/api/courses", {
+      method: "POST",
+      body: JSON.stringify(curso),
+      headers: { "Content-Type": "application/json" },
+    });
 
-      if (!res.ok) throw new Error("Erro ao adicionar curso.");
-
+    if (res.ok) {
       alert("Curso adicionado com sucesso!");
       setTitulo("");
       setDescricao("");
       setPreco("");
       setFotoCapa("");
-      setError(null);
-      
-      // ✅ Atualizar a lista de cursos
-      const updatedCursos = await fetch("/api/courses");
-      const data: Curso[] = await updatedCursos.json();
-      setCursos(data);
-    } catch (error) {
+      fetchCursos(); // ✅ Agora pode ser chamado sem erro
+    } else {
       alert("Erro ao adicionar curso.");
-      setError("Erro ao cadastrar curso. Tente novamente.");
-      console.error(error);
     }
   }
 
@@ -92,25 +74,17 @@ export default function AdminDashboard() {
       </form>
 
       <h2>Cursos Existentes</h2>
-
-      {/* ✅ Se estiver carregando, exibir mensagem */}
-      {loading && <p>Carregando cursos...</p>}
-      
-      {/* ✅ Se houver erro, exibir mensagem */}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {/* ✅ Se a lista estiver vazia, exibir mensagem */}
-      {cursos.length === 0 && !loading && !error ? (
-        <p>Nenhum curso cadastrado.</p>
-      ) : (
-        <ul>
-          {cursos.map((curso) => (
+      <ul>
+        {cursos.length > 0 ? (
+          cursos.map((curso) => (
             <li key={curso.id}>
               <strong>{curso.titulo}</strong> - R$ {curso.preco.toFixed(2)}
             </li>
-          ))}
-        </ul>
-      )}
+          ))
+        ) : (
+          <p>Nenhum curso cadastrado.</p>
+        )}
+      </ul>
     </div>
   );
 }

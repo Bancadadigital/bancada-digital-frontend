@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
-// Definição do tipo do curso express
+// Definição do tipo para um curso express
 type ExpressCourse = {
   id: number;
   titulo: string;
@@ -13,39 +14,51 @@ type ExpressCourse = {
 };
 
 export default function ManageExpressCourses() {
-  const [courses, setCourses] = useState<ExpressCourse[]>([]);
+  // Estados para os campos do formulário
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [preco, setPreco] = useState(0);
+  const [preco, setPreco] = useState("");
   const [rating, setRating] = useState(0);
   const [fotoCapa, setFotoCapa] = useState("");
 
-  // Buscar cursos do Supabase via API
-  useEffect(() => {
-    async function fetchCourses() {
-      try {
-        const res = await fetch("/api/courses");
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setCourses(data);
-        } else {
-          console.error("Erro: Resposta inesperada da API", data);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar cursos:", error);
-      }
+  // Estado para armazenar a lista de cursos
+  const [cursos, setCursos] = useState<ExpressCourse[]>([]);
+  // Estado para indicar loading ou erros (opcional)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Função para buscar os cursos do Supabase via API
+  async function fetchCourses() {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/courses");
+      if (!res.ok) throw new Error("Erro ao buscar cursos.");
+      // Define que os dados são do tipo ExpressCourse[]
+      const data: ExpressCourse[] = await res.json();
+      setCursos(data);
+      setError(null);
+    } catch (err) {
+      console.error("Erro ao buscar cursos:", err);
+      setError("Erro ao carregar cursos. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
+  }
+
+  // Chama fetchCourses ao montar o componente
+  useEffect(() => {
     fetchCourses();
   }, []);
 
-  // Função para adicionar um novo curso no Supabase
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Função para adicionar um novo curso via API (Supabase)
+  async function handleAdicionarCurso(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    // Cria o objeto do novo curso. Note que usamos a chave "foto_capa" para bater com o banco.
     const newCourse = {
       titulo,
       descricao,
-      preco,
+      preco: parseFloat(preco),
       rating,
       foto_capa: fotoCapa,
     };
@@ -59,53 +72,34 @@ export default function ManageExpressCourses() {
         body: JSON.stringify(newCourse),
       });
 
-      const data = await res.json();
-      if (res.ok) {
-        setCourses([...courses, data.data[0]]);
-        setTitulo("");
-        setDescricao("");
-        setPreco(0);
-        setRating(0);
-        setFotoCapa("");
-      } else {
-        console.error("Erro ao criar curso:", data.error);
-      }
-    } catch (error) {
-      console.error("Erro na requisição:", error);
+      if (!res.ok) throw new Error("Erro ao adicionar curso.");
+      const result = await res.json();
+      
+      // Atualiza a lista de cursos chamando a função fetchCourses novamente
+      await fetchCourses();
+      
+      alert("Curso adicionado com sucesso!");
+      // Limpa os campos do formulário
+      setTitulo("");
+      setDescricao("");
+      setPreco("");
+      setRating(0);
+      setFotoCapa("");
+    } catch (err) {
+      console.error("Erro na requisição:", err);
+      alert("Erro ao adicionar curso.");
     }
-  };
-
-  // Função para deletar um curso
-  const handleDelete = async (id: number) => {
-    try {
-      const res = await fetch(`/api/courses?id=${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setCourses(courses.filter((course) => course.id !== id));
-      } else {
-        console.error("Erro ao excluir curso.");
-      }
-    } catch (error) {
-      console.error("Erro na requisição de exclusão:", error);
-    }
-  };
+  }
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1>Gerenciar Bancada Express</h1>
+      <h1>Painel Admin - Adicionar Curso Express</h1>
       <p>Adicione novos cursos express e gerencie os existentes.</p>
 
       {/* Formulário para adicionar cursos */}
       <form
-        onSubmit={handleSubmit}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          maxWidth: "400px",
-        }}
+        onSubmit={handleAdicionarCurso}
+        style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "400px" }}
       >
         <label>
           Título:
@@ -129,7 +123,7 @@ export default function ManageExpressCourses() {
           <input
             type="number"
             value={preco}
-            onChange={(e) => setPreco(Number(e.target.value))}
+            onChange={(e) => setPreco(e.target.value)}
             required
           />
         </label>
@@ -151,6 +145,7 @@ export default function ManageExpressCourses() {
             value={fotoCapa}
             onChange={(e) => setFotoCapa(e.target.value)}
             placeholder="https://exemplo.com/imagem.jpg"
+            required
           />
         </label>
         <button type="submit">Adicionar Curso Express</button>
@@ -158,23 +153,29 @@ export default function ManageExpressCourses() {
 
       <hr style={{ margin: "2rem 0" }} />
 
-      <h2>Lista de Cursos Express</h2>
-      {courses.length === 0 ? (
+      <h2>Cursos Existentes</h2>
+      {/* Exibe mensagens de loading ou erro */}
+      {loading && <p>Carregando cursos...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {cursos.length === 0 && !loading ? (
         <p>Nenhum curso cadastrado.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
-          {courses.map((course) => (
+          {cursos.map((course) => (
             <li key={course.id} style={{ marginBottom: "1rem" }}>
+              {/* Usando o componente Image do Next.js para otimizar a imagem */}
               {course.foto_capa && (
-                <img
+                <Image
                   src={course.foto_capa}
                   alt={`Capa do curso ${course.titulo}`}
-                  style={{ width: "200px", display: "block", marginBottom: "0.5rem" }}
+                  width={200}
+                  height={150}
+                  style={{ display: "block", marginBottom: "0.5rem" }}
                 />
               )}
               <strong>{course.titulo}</strong> - R$ {course.preco.toFixed(2)} - ⭐ {course.rating}
               <p>{course.descricao}</p>
-              <button onClick={() => handleDelete(course.id)}>Excluir</button>
             </li>
           ))}
         </ul>
