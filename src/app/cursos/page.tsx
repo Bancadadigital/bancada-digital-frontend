@@ -1,44 +1,79 @@
-"use client";
+"use client"; // Este componente roda no lado do cliente
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-// Define um tipo para representar um curso.
-// O campo "preco" é opcional e "categoria" serve para identificar cursos rápidos.
+// Define o tipo de dados para cada curso
 type Curso = {
   id: number;
   titulo: string;
   descricao: string;
-  preco?: number;
-  categoria?: string;
+  preco: number;
+  // 'categoria' pode ser "completo" para cursos completos ou "express" para os cursos rápidos (Bancada Express)
+  categoria: "completo" | "express";
 };
 
 export default function Cursos() {
-  // Estado para armazenar a lista de cursos
+  // Estado para armazenar os cursos
   const [cursos, setCursos] = useState<Curso[]>([]);
-  // Estado para indicar se os dados estão sendo carregados
+  // Estado para controlar se os dados estão sendo carregados
   const [loading, setLoading] = useState(true);
 
+  // Simula a obtenção de dados (substitua por uma chamada à sua API quando necessário)
   useEffect(() => {
-    // Simula a requisição de dados com um delay
     setTimeout(() => {
       setCursos([
-        // Cursos completos (exemplos)
-        { id: 1, titulo: "Curso de Node.js", descricao: "Aprenda Node.js do básico ao avançado", preco: 99.90 },
-        { id: 2, titulo: "Curso de React", descricao: "Construindo interfaces com React", preco: 120.00 },
-        { id: 3, titulo: "Mentoria de Desenvolvimento", descricao: "Sessões de mentoria para acelerar sua carreira", preco: 150.00 },
-        // Cursos rápidos (categoria "rapido")
-        { id: 4, titulo: "Curso Rápido de Testes", descricao: "Curso introdutório para você testar se o assunto agrada", preco: 19.90, categoria: "rapido" },
-        { id: 5, titulo: "Mini Curso de UX", descricao: "Introdução rápida aos fundamentos de UX", preco: 10.00, categoria: "rapido" },
+        // Exemplo de cursos completos
+        {
+          id: 1,
+          titulo: "Curso Completo de Node.js",
+          descricao: "Aprenda Node.js do básico ao avançado com conteúdo completo.",
+          preco: 99.9,
+          categoria: "completo",
+        },
+        {
+          id: 2,
+          titulo: "Curso Completo de React",
+          descricao: "Domine o React e crie interfaces dinâmicas.",
+          preco: 120,
+          categoria: "completo",
+        },
+        // Exemplo de cursos express (Bancada Express)
+        {
+          id: 3,
+          titulo: "Bancada Express: Aprenda Linux",
+          descricao: "Introdução rápida ao mundo do Linux para você testar se é a área para você.",
+          preco: 19.9,
+          categoria: "express",
+        },
+        {
+          id: 4,
+          titulo: "Bancada Express: Aprenda Docker",
+          descricao: "Conceitos básicos de Docker e containerização de forma rápida.",
+          preco: 19.9,
+          categoria: "express",
+        },
+        {
+          id: 5,
+          titulo: "Bancada Express: Aprenda Zabbix",
+          descricao: "Curso express para começar a monitorar sistemas com Zabbix.",
+          preco: 19.9,
+          categoria: "express",
+        },
+        {
+          id: 6,
+          titulo: "Bancada Express: Aprenda GitHub",
+          descricao: "Aprenda a usar o GitHub para versionamento de código e colaboração.",
+          preco: 19.9,
+          categoria: "express",
+        },
       ]);
       setLoading(false);
     }, 1000);
   }, []);
 
-  // Filtra os cursos rápidos
-  const cursosRapidos = cursos.filter(curso => curso.categoria === "rapido");
-
-  // Filtra os cursos completos
-  const cursosCompletos = cursos.filter(curso => !curso.categoria);
+  // Filtra os cursos por categoria
+  const cursosCompletos = cursos.filter((curso) => curso.categoria === "completo");
+  const cursosExpress = cursos.filter((curso) => curso.categoria === "express");
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
@@ -47,30 +82,42 @@ export default function Cursos() {
         <p>Carregando cursos...</p>
       ) : (
         <>
+          {/* Seção de cursos completos */}
           <h2>Cursos Completos</h2>
           <ul>
             {cursosCompletos.map((curso) => (
-              <li key={curso.id}>
+              <li key={curso.id} style={{ marginBottom: "1rem" }}>
                 <h3>
-                  {curso.titulo} - R$ {curso.preco?.toFixed(2)}
+                  {curso.titulo} - R$ {curso.preco.toFixed(2)}
                 </h3>
                 <p>{curso.descricao}</p>
               </li>
             ))}
           </ul>
-          <h2>Cursos Rápidos (Teste)</h2>
+          {/* Seção de cursos express, agora rebatizados como "Bancada Express" */}
+          <h2>Bancada Express</h2>
+          <p>Confira nossos cursos express para testar e aprender de forma rápida!</p>
           <ul>
-            {cursosRapidos.map((curso) => (
-              <li key={curso.id}>
+            {cursosExpress.map((curso) => (
+              <li key={curso.id} style={{ marginBottom: "1rem" }}>
                 <h3>
-                  {curso.titulo} - R$ {curso.preco?.toFixed(2)}
+                  {curso.titulo} - R$ {curso.preco.toFixed(2)}
                 </h3>
                 <p>{curso.descricao}</p>
               </li>
             ))}
           </ul>
+          {/* Botão placeholder para inserir um novo curso express */}
+          <button
+            onClick={() =>
+              alert("Funcionalidade para inserir curso express em desenvolvimento!")
+            }
+          >
+            Inserir Novo Curso Express
+          </button>
         </>
       )}
+      {/* Link para voltar à Home */}
       <Link href="/">Voltar para a Home</Link>
     </div>
   );

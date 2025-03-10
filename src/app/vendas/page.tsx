@@ -1,34 +1,53 @@
-"use client";
+"use client"; // Este componente roda no lado do cliente
 import { useState } from "react";
 import Link from "next/link";
 
-// Página de Vendas: Simula um formulário de checkout para comprar cursos/mentorias
 export default function Vendas() {
-  // Estados para armazenar os dados do formulário
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [produto, setProduto] = useState("Curso de Node.js");
-  const [mensagem, setMensagem] = useState("");
+  // Estados para armazenar os dados do formulário e controle do fluxo de pagamento
+  const [nome, setNome] = useState("");               // Nome do usuário
+  const [email, setEmail] = useState("");             // Email do usuário
+  // Estado para o produto, utilizando o ID de preço do Stripe para compra única ou assinatura mensal
+  // Aqui, usamos "price_1R0q1GJJV3Ij9mdU8ZAVPmpc" para a compra única,
+  // e "price_1R0pVvJJV3Ij9mdU6bt9Qpr3" para a assinatura mensal.
+  const [produto, setProduto] = useState("price_1R0q1GJJV3Ij9mdU8ZAVPmpc");
+  const [mensagem, setMensagem] = useState("");         // Mensagem de feedback para o usuário
+  const [loading, setLoading] = useState(false);        // Indicador de carregamento
+
+  // Função que inicia o pagamento chamando o endpoint de pagamento
+  const iniciarPagamento = async () => {
+    setLoading(true);
+    try {
+      // Envia o priceId selecionado para o endpoint /api/payment
+      const res = await fetch("/api/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId: produto }),
+      });
+      const data = await res.json();
+
+      // Se a sessão de checkout for criada, redireciona o usuário para a URL do Stripe
+      if (data.sessionUrl) {
+        window.location.href = data.sessionUrl;
+      } else {
+        setMensagem("Erro ao iniciar o pagamento.");
+      }
+    } catch (error) {
+      console.error("Erro ao iniciar pagamento:", error);
+      setMensagem("Erro ao iniciar o pagamento.");
+    }
+    setLoading(false);
+  };
 
   // Função para tratar o envio do formulário
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Aqui você pode fazer uma requisição para processar o pagamento
-    // Neste exemplo, apenas simulamos o envio e mostramos uma mensagem de sucesso
-    setMensagem(
-      `Obrigado, ${nome}! Seu pedido para "${produto}" foi recebido. Em breve, enviaremos mais detalhes para ${email}.`
-    );
-    // Opcional: Limpar os campos do formulário
-    setNome("");
-    setEmail("");
-    setProduto("Curso de Node.js");
+    iniciarPagamento();
   };
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <h1>Página de Vendas</h1>
       <p>Realize sua compra e comece a aprender!</p>
-      {/* Formulário de Checkout */}
       <form
         onSubmit={handleSubmit}
         style={{
@@ -38,7 +57,7 @@ export default function Vendas() {
           maxWidth: "400px",
         }}
       >
-        {/* Campo de Nome */}
+        {/* Campo para o Nome */}
         <label>
           Nome:
           <input
@@ -48,7 +67,7 @@ export default function Vendas() {
             required
           />
         </label>
-        {/* Campo de Email */}
+        {/* Campo para o Email */}
         <label>
           Email:
           <input
@@ -61,23 +80,23 @@ export default function Vendas() {
         {/* Seletor de Produto */}
         <label>
           Produto:
-          <select
-            value={produto}
-            onChange={(e) => setProduto(e.target.value)}
-          >
-            <option value="Curso de Node.js">Curso de Node.js</option>
-            <option value="Curso de React">Curso de React</option>
-            <option value="Mentoria de Desenvolvimento">
-              Mentoria de Desenvolvimento
+          <select value={produto} onChange={(e) => setProduto(e.target.value)}>
+            {/* Opção para compra única, com o ID de preço atualizado */}
+            <option value="price_1R0q1GJJV3Ij9mdU8ZAVPmpc">
+              Curso de Node.js - Compra Única - R$99,90
             </option>
+            {/* Opção para assinatura mensal */}
+            <option value="price_1R0pVvJJV3Ij9mdU6bt9Qpr3">
+              Curso de Node.js - Assinatura Mensal - R$19,90
+            </option>
+            {/* Você pode adicionar outras opções conforme necessário */}
           </select>
         </label>
-        {/* Botão de Envio */}
-        <button type="submit">Comprar</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Processando..." : "Comprar"}
+        </button>
       </form>
-      {/* Exibe mensagem de confirmação caso exista */}
       {mensagem && <p>{mensagem}</p>}
-      {/* Link para voltar à Home */}
       <Link href="/">Voltar para a Home</Link>
     </div>
   );
