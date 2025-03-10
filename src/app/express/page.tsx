@@ -1,8 +1,9 @@
-"use client"; // Esse componente roda no lado do cliente
+"use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image"; // Usamos Next.js Image para otimização
 
-// Define o tipo de cada curso express
+// Define o tipo para cada curso express
 type ExpressCourse = {
   id: number;
   titulo: string;
@@ -15,12 +16,10 @@ type ExpressCourse = {
 export default function BancadaExpressPage() {
   // Estado para armazenar os cursos
   const [cursos, setCursos] = useState<ExpressCourse[]>([]);
-  // Estado para indicar se os dados estão sendo carregados
   const [loading, setLoading] = useState(true);
-  // Estado para armazenar mensagens de erro
   const [error, setError] = useState<string | null>(null);
 
-  // Busca os cursos do endpoint GET /api/courses assim que a página carrega
+  // Busca os cursos do endpoint GET /api/courses quando a página carrega
   useEffect(() => {
     async function fetchCursos() {
       try {
@@ -30,8 +29,12 @@ export default function BancadaExpressPage() {
         }
         const data = await res.json();
         setCursos(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Erro desconhecido");
+        }
       } finally {
         setLoading(false);
       }
@@ -42,10 +45,8 @@ export default function BancadaExpressPage() {
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <h1>Bancada Express - Aprenda em 7 Dias</h1>
-      
       {loading && <p>Carregando cursos...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
-      
       {!loading && cursos.length === 0 ? (
         <p>Nenhum curso disponível no momento.</p>
       ) : (
@@ -59,12 +60,14 @@ export default function BancadaExpressPage() {
                 paddingBottom: "1rem",
               }}
             >
-              {/* Exibe a foto de capa, se houver */}
               {curso.foto_capa && (
-                <img
+                // Usamos o componente Image para otimização
+                <Image
                   src={curso.foto_capa}
                   alt={`Capa de ${curso.titulo}`}
-                  style={{ width: "200px", marginBottom: "0.5rem" }}
+                  width={200}
+                  height={150}
+                  style={{ marginBottom: "0.5rem" }}
                 />
               )}
               <h2>{curso.titulo}</h2>
@@ -72,7 +75,6 @@ export default function BancadaExpressPage() {
               <p>
                 Preço: R$ {curso.preco.toFixed(2)} - Classificação: {curso.rating} ⭐
               </p>
-              {/* Link para a página de detalhes do curso */}
               <Link href={`/express/${curso.id}`} legacyBehavior>
                 <a style={{ textDecoration: "none", color: "blue" }}>
                   Ver Detalhes
@@ -82,7 +84,6 @@ export default function BancadaExpressPage() {
           ))}
         </ul>
       )}
-      {/* Link para voltar à Home */}
       <Link href="/" legacyBehavior>
         <a style={{ textDecoration: "none", color: "blue" }}>
           Voltar para a Home

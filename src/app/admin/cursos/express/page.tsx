@@ -1,80 +1,103 @@
-"use client"; // Roda no lado do cliente
+"use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// Define o tipo para um curso express, agora com um campo para a foto de capa (cover image)
+// Definição do tipo do curso express
 type ExpressCourse = {
   id: number;
   titulo: string;
   descricao: string;
   preco: number;
-  rating: number; // Classificação de 1 a 5
-  fotoCapa: string; // URL da foto de capa do curso
+  rating: number;
+  foto_capa: string;
 };
 
 export default function ManageExpressCourses() {
-  // Estado para armazenar a lista de cursos express
   const [courses, setCourses] = useState<ExpressCourse[]>([]);
-  // Estados para os campos do formulário
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState(0);
   const [rating, setRating] = useState(0);
-  const [fotoCapa, setFotoCapa] = useState(""); // Novo estado para a foto de capa
+  const [fotoCapa, setFotoCapa] = useState("");
 
-  // Carrega os cursos do localStorage na montagem do componente
+  // Buscar cursos do Supabase via API
   useEffect(() => {
-    const storedCourses = localStorage.getItem("coursesExpress");
-    if (storedCourses) {
-      setCourses(JSON.parse(storedCourses));
+    async function fetchCourses() {
+      try {
+        const res = await fetch("/api/courses");
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setCourses(data);
+        } else {
+          console.error("Erro: Resposta inesperada da API", data);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar cursos:", error);
+      }
     }
+    fetchCourses();
   }, []);
 
-  // Atualiza o localStorage sempre que a lista de cursos mudar
-  useEffect(() => {
-    localStorage.setItem("coursesExpress", JSON.stringify(courses));
-  }, [courses]);
+  // Função para adicionar um novo curso no Supabase
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  // Função para tratar o envio do formulário para adicionar um novo curso express
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Previne o comportamento padrão do formulário
-
-    // Cria um novo curso express com um ID gerado com base na lista atual
-    const newCourse: ExpressCourse = {
-      id: courses.length > 0 ? courses[courses.length - 1].id + 1 : 1,
+    const newCourse = {
       titulo,
       descricao,
       preco,
       rating,
-      fotoCapa, // Define a foto de capa do curso
+      foto_capa: fotoCapa,
     };
 
-    // Adiciona o novo curso à lista
-    setCourses([...courses, newCourse]);
+    try {
+      const res = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newCourse),
+      });
 
-    // Limpa os campos do formulário
-    setTitulo("");
-    setDescricao("");
-    setPreco(0);
-    setRating(0);
-    setFotoCapa("");
+      const data = await res.json();
+      if (res.ok) {
+        setCourses([...courses, data.data[0]]);
+        setTitulo("");
+        setDescricao("");
+        setPreco(0);
+        setRating(0);
+        setFotoCapa("");
+      } else {
+        console.error("Erro ao criar curso:", data.error);
+      }
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+    }
   };
 
-  // Função para remover um curso da lista
-  const handleDelete = (id: number) => {
-    const filtered = courses.filter((course) => course.id !== id);
-    setCourses(filtered);
+  // Função para deletar um curso
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await fetch(`/api/courses?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setCourses(courses.filter((course) => course.id !== id));
+      } else {
+        console.error("Erro ao excluir curso.");
+      }
+    } catch (error) {
+      console.error("Erro na requisição de exclusão:", error);
+    }
   };
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <h1>Gerenciar Bancada Express</h1>
-      <p>
-        Adicione novos cursos express para que os alunos possam testar e aprender
-        rapidamente.
-      </p>
+      <p>Adicione novos cursos express e gerencie os existentes.</p>
 
-      {/* Formulário para inserir um novo curso express */}
+      {/* Formulário para adicionar cursos */}
       <form
         onSubmit={handleSubmit}
         style={{
@@ -111,7 +134,7 @@ export default function ManageExpressCourses() {
           />
         </label>
         <label>
-          Classificação (Estrelas, de 1 a 5):
+          Classificação (1 a 5):
           <input
             type="number"
             min="1"
@@ -137,19 +160,19 @@ export default function ManageExpressCourses() {
 
       <h2>Lista de Cursos Express</h2>
       {courses.length === 0 ? (
-        <p>Nenhum curso adicionado.</p>
+        <p>Nenhum curso cadastrado.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
           {courses.map((course) => (
             <li key={course.id} style={{ marginBottom: "1rem" }}>
-              {course.fotoCapa && (
+              {course.foto_capa && (
                 <img
-                  src={course.fotoCapa}
+                  src={course.foto_capa}
                   alt={`Capa do curso ${course.titulo}`}
                   style={{ width: "200px", display: "block", marginBottom: "0.5rem" }}
                 />
               )}
-              <strong>{course.titulo}</strong> - R$ {course.preco.toFixed(2)} - Classificação: {course.rating} ⭐
+              <strong>{course.titulo}</strong> - R$ {course.preco.toFixed(2)} - ⭐ {course.rating}
               <p>{course.descricao}</p>
               <button onClick={() => handleDelete(course.id)}>Excluir</button>
             </li>
