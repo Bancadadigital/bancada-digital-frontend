@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-// 🔹 Definição do tipo Curso
+// 🛠️ Definição do tipo do curso para evitar erro de tipagem
 type Curso = {
   id: number;
   titulo: string;
@@ -15,22 +15,37 @@ export default function AdminDashboard() {
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
   const [fotoCapa, setFotoCapa] = useState("");
-  const [cursos, setCursos] = useState<{ id: number; titulo: string; preco: number }[]>([]);
+  const [cursos, setCursos] = useState<Curso[]>([]);
+  const [loading, setLoading] = useState(true); // ✅ Estado para loading
+  const [error, setError] = useState<string | null>(null); // ✅ Estado para erros
 
-  // ✅ Função para buscar cursos do Supabase
+  // ✅ Buscar cursos do Supabase
   useEffect(() => {
-  async function fetchCursos() {
-    const res = await fetch("/api/courses");
-    const data: { id: number; titulo: string; preco: number }[] = await res.json();
-    setCursos(data);
-  }
-  fetchCursos();
-}, []);
+    async function fetchCursos() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/courses");
+        if (!res.ok) throw new Error("Erro ao buscar cursos");
+        const data: Curso[] = await res.json();
+        setCursos(data);
+      } catch (error) {
+        setError("Erro ao carregar cursos. Tente novamente.");
+        console.error("Erro ao carregar cursos:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCursos();
+  }, []);
 
-
-  // ✅ Função para adicionar curso ao Supabase
+  // ✅ Adicionar novo curso
   async function handleAdicionarCurso(e: React.FormEvent) {
     e.preventDefault();
+    if (!titulo || !descricao || !preco || !fotoCapa) {
+      alert("Todos os campos são obrigatórios!");
+      return;
+    }
+
     const curso = {
       titulo,
       descricao,
@@ -46,26 +61,29 @@ export default function AdminDashboard() {
       });
 
       if (!res.ok) throw new Error("Erro ao adicionar curso.");
-      const novoCurso = await res.json();
-
-      // ✅ Atualiza a lista de cursos após a inserção
-      setCursos((prevCursos) => [...prevCursos, novoCurso.data[0]]);
 
       alert("Curso adicionado com sucesso!");
       setTitulo("");
       setDescricao("");
       setPreco("");
       setFotoCapa("");
+      setError(null);
+      
+      // ✅ Atualizar a lista de cursos
+      const updatedCursos = await fetch("/api/courses");
+      const data: Curso[] = await updatedCursos.json();
+      setCursos(data);
     } catch (error) {
-      alert(error);
+      alert("Erro ao adicionar curso.");
+      setError("Erro ao cadastrar curso. Tente novamente.");
+      console.error(error);
     }
   }
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+    <div>
       <h1>Painel Admin - Adicionar Curso Express</h1>
-
-      <form onSubmit={handleAdicionarCurso} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px" }}>
+      <form onSubmit={handleAdicionarCurso}>
         <input type="text" placeholder="Título" value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
         <input type="text" placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required />
         <input type="number" placeholder="Preço" value={preco} onChange={(e) => setPreco(e.target.value)} required />
@@ -74,17 +92,21 @@ export default function AdminDashboard() {
       </form>
 
       <h2>Cursos Existentes</h2>
-      {cursos.length === 0 ? (
-        <p>Nenhum curso cadastrado ainda.</p>
+
+      {/* ✅ Se estiver carregando, exibir mensagem */}
+      {loading && <p>Carregando cursos...</p>}
+      
+      {/* ✅ Se houver erro, exibir mensagem */}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {/* ✅ Se a lista estiver vazia, exibir mensagem */}
+      {cursos.length === 0 && !loading && !error ? (
+        <p>Nenhum curso cadastrado.</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {cursos.map((curso: Curso) => (
-            <li key={curso.id} style={{ marginBottom: "10px" }}>
-              {curso.foto_capa && (
-                <img src={curso.foto_capa} alt={`Capa do curso ${curso.titulo}`} style={{ width: "150px", display: "block" }} />
-              )}
+        <ul>
+          {cursos.map((curso) => (
+            <li key={curso.id}>
               <strong>{curso.titulo}</strong> - R$ {curso.preco.toFixed(2)}
-              <p>{curso.descricao}</p>
             </li>
           ))}
         </ul>
