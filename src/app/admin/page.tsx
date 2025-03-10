@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-// Definição do tipo Curso
+// 🔹 Definição do tipo Curso
 type Curso = {
   id: number;
   titulo: string;
@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
   const [fotoCapa, setFotoCapa] = useState("");
-  const [cursos, setCursos] = useState<Curso[]>([]);
+  const [cursos, setCursos] = useState<Curso[]>([]); // ✅ Tipagem corrigida
 
   // ✅ Função para buscar cursos do Supabase
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error("Erro ao adicionar curso.");
       const novoCurso = await res.json();
 
-      // Atualiza a lista de cursos com o novo cadastro
+      // ✅ Atualiza a lista de cursos após a inserção
       setCursos((prevCursos) => [...prevCursos, novoCurso.data[0]]);
 
       alert("Curso adicionado com sucesso!");
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
         <p>Nenhum curso cadastrado ainda.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
-          {cursos.map((curso) => (
+          {cursos.map((curso: Curso) => (
             <li key={curso.id} style={{ marginBottom: "10px" }}>
               {curso.foto_capa && (
                 <img src={curso.foto_capa} alt={`Capa do curso ${curso.titulo}`} style={{ width: "150px", display: "block" }} />
