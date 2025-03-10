@@ -15,22 +15,18 @@ export default function AdminDashboard() {
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
   const [fotoCapa, setFotoCapa] = useState("");
-  const [cursos, setCursos] = useState<Curso[]>([]); // ✅ Tipagem corrigida
+  const [cursos, setCursos] = useState<{ id: number; titulo: string; preco: number }[]>([]);
 
   // ✅ Função para buscar cursos do Supabase
   useEffect(() => {
-    async function fetchCursos() {
-      try {
-        const res = await fetch("/api/courses");
-        if (!res.ok) throw new Error("Erro ao buscar cursos.");
-        const data: Curso[] = await res.json();
-        setCursos(data);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-    fetchCursos();
-  }, []);
+  async function fetchCursos() {
+    const res = await fetch("/api/courses");
+    const data: { id: number; titulo: string; preco: number }[] = await res.json();
+    setCursos(data);
+  }
+  fetchCursos();
+}, []);
+
 
   // ✅ Função para adicionar curso ao Supabase
   async function handleAdicionarCurso(e: React.FormEvent) {
