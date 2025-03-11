@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { NextAuthConfig } from "next-auth";
 
-const config: NextAuthConfig = {
+const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -11,16 +10,12 @@ const config: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Substitua aqui pela sua lógica real de autenticação
+        // Substitua essa lógica por sua autenticação real posteriormente
         if (
           credentials?.email === "teste@example.com" &&
           credentials.password === "senha"
         ) {
-          return {
-            id: "1",
-            name: "Usuário",
-            email: credentials.email,
-          };
+          return { id: "1", name: "Usuário", email: credentials.email };
         }
         return null;
       },
@@ -29,5 +24,7 @@ const config: NextAuthConfig = {
   session: { strategy: "jwt" },
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(config);
-export const { GET, POST } = handlers;
+const handler = NextAuth(authOptions);
+
+// Exportações corretas para App Router
+export { handler as GET, handler as POST };
