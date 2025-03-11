@@ -4,10 +4,6 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "picsum.photos",
-      },
-      {
-        protocol: "https",
         hostname: "placehold.co",
       },
       {
@@ -16,10 +12,14 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "ingles200h.com",
+        hostname: "picsum.photos",
       },
-      // Adicione outros domínios se necessário
     ],
+  },
+  
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
 };
 
