@@ -8,16 +8,12 @@ const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Senha", type: "password" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials) {
-          return null;
-        }
+        const { email, password } = credentials || {};
 
-        const { email, password } = credentials;
-
-        // TODO: Substitua a lógica abaixo por autenticação real no Supabase posteriormente.
+        // TODO: substituir por autenticação real no Supabase futuramente
         if (email === "teste@example.com" && password === "senha") {
           return { id: "1", name: "Usuário", email };
         }
@@ -26,24 +22,17 @@ const authOptions: NextAuthOptions = {
       },
     }),
   ],
-
-  session: {
-    strategy: "jwt" as const,
-  },
-
-  pages: {
-    signIn: "/login",
-  },
+  session: { strategy: "jwt" as const },
 
   callbacks: {
     jwt({ token, user }) {
-      if (user) {
-        token.email = user.email;
-      }
+      if (user) token.email = user.email;
       return token;
     },
     session({ session, token }) {
-      session.user.email = token.email;
+      if (session.user && token.email) {
+        session.user.email = token.email;
+      }
       return session;
     },
   },
@@ -51,5 +40,5 @@ const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-// Exportação padrão obrigatória no App Router
+// Exportação correta exigida pelo App Router
 export { handler as GET, handler as POST };
