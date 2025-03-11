@@ -1,18 +1,26 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import type { NextAuthConfig } from "next-auth";
 
-export const authOptions: NextAuthOptions = {
+const config: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text", placeholder: "Email" },
-        password: { label: "Senha", type: "password" },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Lógica de autorização aqui
-        if (credentials?.email === "teste@example.com" && credentials.password === "senha") {
-          return { id: 1, name: "Teste", email: credentials.email };
+        // Substitua aqui pela sua lógica real de autenticação
+        if (
+          credentials?.email === "teste@example.com" &&
+          credentials.password === "senha"
+        ) {
+          return {
+            id: "1",
+            name: "Usuário",
+            email: credentials.email,
+          };
         }
         return null;
       },
@@ -21,5 +29,5 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 };
 
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export const { handlers, auth, signIn, signOut } = NextAuth(config);
+export const { GET, POST } = handlers;
