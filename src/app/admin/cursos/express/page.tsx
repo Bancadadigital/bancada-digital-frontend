@@ -20,10 +20,9 @@ export default function ManageExpressCourses() {
   const [preco, setPreco] = useState("");
   const [rating, setRating] = useState(0);
   const [fotoCapa, setFotoCapa] = useState("");
-
-  // Estado para armazenar a lista de cursos
+  // Estado para armazenar a lista de cursos (tipado corretamente)
   const [cursos, setCursos] = useState<ExpressCourse[]>([]);
-  // Estado para indicar loading ou erros (opcional)
+  // Estados para loading e erro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,29 +31,28 @@ export default function ManageExpressCourses() {
     try {
       setLoading(true);
       const res = await fetch("/api/courses");
-      if (!res.ok) throw new Error("Erro ao buscar cursos.");
-      // Define que os dados são do tipo ExpressCourse[]
+      if (!res.ok) throw new Error("Erro ao buscar cursos");
       const data: ExpressCourse[] = await res.json();
       setCursos(data);
       setError(null);
     } catch (err) {
-      console.error("Erro ao buscar cursos:", err);
+      console.error("Erro ao carregar cursos:", err);
       setError("Erro ao carregar cursos. Tente novamente.");
     } finally {
       setLoading(false);
     }
   }
 
-  // Chama fetchCourses ao montar o componente
+  // Executa a busca de cursos ao montar o componente
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  // Função para adicionar um novo curso via API (Supabase)
+  // Função para adicionar um novo curso via API
   async function handleAdicionarCurso(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    // Cria o objeto do novo curso. Note que usamos a chave "foto_capa" para bater com o banco.
+    // Cria o objeto com os dados do novo curso
     const newCourse = {
       titulo,
       descricao,
@@ -73,11 +71,10 @@ export default function ManageExpressCourses() {
       });
 
       if (!res.ok) throw new Error("Erro ao adicionar curso.");
-      const result = await res.json();
-      
-      // Atualiza a lista de cursos chamando a função fetchCourses novamente
+
+      // Atualiza a lista de cursos após a inserção
       await fetchCourses();
-      
+
       alert("Curso adicionado com sucesso!");
       // Limpa os campos do formulário
       setTitulo("");
@@ -86,20 +83,38 @@ export default function ManageExpressCourses() {
       setRating(0);
       setFotoCapa("");
     } catch (err) {
-      console.error("Erro na requisição:", err);
+      console.error("Erro ao adicionar curso:", err);
       alert("Erro ao adicionar curso.");
+    }
+  }
+
+  // Função para deletar um curso (caso implementado no backend)
+  async function handleDelete(id: number) {
+    try {
+      const res = await fetch(`/api/courses?id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setCursos(cursos.filter((course) => course.id !== id));
+      } else {
+        console.error("Erro ao excluir curso.");
+      }
+    } catch (err) {
+      console.error("Erro na requisição de exclusão:", err);
     }
   }
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <h1>Painel Admin - Adicionar Curso Express</h1>
-      <p>Adicione novos cursos express e gerencie os existentes.</p>
-
-      {/* Formulário para adicionar cursos */}
       <form
         onSubmit={handleAdicionarCurso}
-        style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "400px" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+          maxWidth: "400px",
+        }}
       >
         <label>
           Título:
@@ -154,17 +169,14 @@ export default function ManageExpressCourses() {
       <hr style={{ margin: "2rem 0" }} />
 
       <h2>Cursos Existentes</h2>
-      {/* Exibe mensagens de loading ou erro */}
       {loading && <p>Carregando cursos...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {cursos.length === 0 && !loading ? (
+      {(!loading && cursos.length === 0) ? (
         <p>Nenhum curso cadastrado.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
           {cursos.map((course) => (
             <li key={course.id} style={{ marginBottom: "1rem" }}>
-              {/* Usando o componente Image do Next.js para otimizar a imagem */}
               {course.foto_capa && (
                 <Image
                   src={course.foto_capa}
@@ -176,12 +188,12 @@ export default function ManageExpressCourses() {
               )}
               <strong>{course.titulo}</strong> - R$ {course.preco.toFixed(2)} - ⭐ {course.rating}
               <p>{course.descricao}</p>
+              <button onClick={() => handleDelete(course.id)}>Excluir</button>
             </li>
           ))}
         </ul>
       )}
 
-      {/* Link para voltar ao Dashboard */}
       <Link href="/admin" legacyBehavior>
         <a style={{ textDecoration: "none", color: "blue" }}>Voltar ao Dashboard</a>
       </Link>
